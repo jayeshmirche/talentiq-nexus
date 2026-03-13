@@ -1,7 +1,9 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
+import ThemeToggle from "@/components/ThemeToggle";
+import { useAuth } from "@/contexts/AuthContext";
 
 const navLinks = [
   { label: "Home", path: "/" },
@@ -16,13 +18,15 @@ const navLinks = [
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 glass-strong">
       <div className="section-container flex items-center justify-between h-16">
         <Link to="/" className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
-            <span className="text-foreground font-heading font-bold text-sm">T</span>
+            <span className="text-primary-foreground font-heading font-bold text-sm">T</span>
           </div>
           <span className="font-heading font-bold text-lg text-foreground">
             Talent<span className="gradient-text">IQ</span>
@@ -45,21 +49,35 @@ const Navbar = () => {
           ))}
         </div>
 
-        <div className="hidden lg:flex items-center gap-3">
-          <Button variant="ghost" size="sm" asChild>
-            <Link to="/login">Login</Link>
-          </Button>
-          <Button variant="hero" size="sm" asChild>
-            <Link to="/signup">Get Started</Link>
-          </Button>
+        <div className="hidden lg:flex items-center gap-2">
+          <ThemeToggle />
+          {user ? (
+            <>
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/dashboard">Dashboard</Link>
+              </Button>
+              <Button variant="hero" size="sm" onClick={() => signOut()}>
+                Sign Out
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/login">Login</Link>
+              </Button>
+              <Button variant="hero" size="sm" asChild>
+                <Link to="/signup">Get Started</Link>
+              </Button>
+            </>
+          )}
         </div>
 
-        <button
-          className="lg:hidden text-foreground"
-          onClick={() => setMobileOpen(!mobileOpen)}
-        >
-          {mobileOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
+        <div className="flex items-center gap-2 lg:hidden">
+          <ThemeToggle />
+          <button className="text-foreground" onClick={() => setMobileOpen(!mobileOpen)}>
+            {mobileOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
       </div>
 
       {mobileOpen && (
@@ -80,12 +98,25 @@ const Navbar = () => {
               </Link>
             ))}
             <div className="flex gap-3 pt-3 border-t border-border/50">
-              <Button variant="ghost" size="sm" asChild className="flex-1">
-                <Link to="/login">Login</Link>
-              </Button>
-              <Button variant="hero" size="sm" asChild className="flex-1">
-                <Link to="/signup">Get Started</Link>
-              </Button>
+              {user ? (
+                <>
+                  <Button variant="ghost" size="sm" asChild className="flex-1" onClick={() => setMobileOpen(false)}>
+                    <Link to="/dashboard">Dashboard</Link>
+                  </Button>
+                  <Button variant="hero" size="sm" className="flex-1" onClick={() => { signOut(); setMobileOpen(false); }}>
+                    Sign Out
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="ghost" size="sm" asChild className="flex-1" onClick={() => setMobileOpen(false)}>
+                    <Link to="/login">Login</Link>
+                  </Button>
+                  <Button variant="hero" size="sm" asChild className="flex-1" onClick={() => setMobileOpen(false)}>
+                    <Link to="/signup">Get Started</Link>
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>

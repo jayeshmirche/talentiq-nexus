@@ -1,4 +1,6 @@
 import SectionHeading from "@/components/SectionHeading";
+import AnimatedSection, { StaggerContainer, StaggerItem } from "@/components/AnimatedSection";
+import { motion } from "framer-motion";
 import { Brain, Target, TrendingUp, Lightbulb, Route, Users, Calendar, BarChart3, Building2, Shield } from "lucide-react";
 
 const features = [
@@ -18,23 +20,30 @@ const FeaturesPage = () => (
   <div className="min-h-screen bg-background pt-20">
     <section className="section-padding">
       <div className="section-container">
-        <SectionHeading
-          badge="Features"
-          title="Powerful"
-          gradientText="Capabilities"
-          subtitle="Everything you need to transform campus placements"
-        />
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <AnimatedSection>
+          <SectionHeading
+            badge="Features"
+            title="Powerful"
+            gradientText="Capabilities"
+            subtitle="Everything you need to transform campus placements"
+          />
+        </AnimatedSection>
+        <StaggerContainer className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {features.map((f) => (
-            <div key={f.title} className="glass rounded-2xl p-6 hover:glow-border transition-all duration-300 group">
-              <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <f.icon size={22} className="text-foreground" />
-              </div>
-              <h3 className="font-heading font-semibold text-foreground mb-2">{f.title}</h3>
-              <p className="text-muted-foreground text-sm leading-relaxed">{f.desc}</p>
-            </div>
+            <StaggerItem key={f.title}>
+              <motion.div
+                whileHover={{ y: -4, boxShadow: "var(--shadow-glow)" }}
+                className="glass rounded-2xl p-6 transition-all duration-300 group h-full"
+              >
+                <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <f.icon size={22} className="text-primary-foreground" />
+                </div>
+                <h3 className="font-heading font-semibold text-foreground mb-2">{f.title}</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">{f.desc}</p>
+              </motion.div>
+            </StaggerItem>
           ))}
-        </div>
+        </StaggerContainer>
       </div>
     </section>
   </div>

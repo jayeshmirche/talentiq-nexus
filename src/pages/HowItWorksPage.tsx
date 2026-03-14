@@ -1,4 +1,6 @@
 import SectionHeading from "@/components/SectionHeading";
+import AnimatedSection, { StaggerContainer, StaggerItem } from "@/components/AnimatedSection";
+import { motion } from "framer-motion";
 import { Upload, Brain, Target, Lightbulb, Route, Briefcase, RefreshCw, ClipboardList, Users, BarChart3, Calendar, LayoutDashboard, Monitor, PieChart, TrendingUp, Search } from "lucide-react";
 
 const studentSteps = [
@@ -28,15 +30,19 @@ const placementSteps = [
   { icon: Target, label: "Predictive Placement Forecast" },
 ];
 
-const WorkflowColumn = ({ title, steps, color }: { title: string; steps: { icon: any; label: string }[]; color: string }) => (
-  <div className="glass rounded-2xl p-8">
+const WorkflowColumn = ({ title, steps }: { title: string; steps: { icon: any; label: string }[] }) => (
+  <div className="glass rounded-2xl p-8 h-full">
     <h3 className="font-heading font-semibold text-foreground text-xl mb-8 text-center">{title}</h3>
     <div className="space-y-4">
       {steps.map((step, i) => (
-        <div key={step.label} className="flex items-center gap-4 group">
+        <motion.div
+          key={step.label}
+          whileHover={{ x: 4 }}
+          className="flex items-center gap-4 group"
+        >
           <div className="flex flex-col items-center">
             <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-              <step.icon size={18} className="text-foreground" />
+              <step.icon size={18} className="text-primary-foreground" />
             </div>
             {i < steps.length - 1 && <div className="w-px h-4 bg-border mt-1" />}
           </div>
@@ -44,7 +50,7 @@ const WorkflowColumn = ({ title, steps, color }: { title: string; steps: { icon:
             <span className="text-accent text-xs font-semibold">Step {i + 1}</span>
             <p className="text-foreground text-sm font-medium">{step.label}</p>
           </div>
-        </div>
+        </motion.div>
       ))}
     </div>
   </div>
@@ -54,17 +60,14 @@ const HowItWorksPage = () => (
   <div className="min-h-screen bg-background pt-20">
     <section className="section-padding">
       <div className="section-container">
-        <SectionHeading
-          badge="How It Works"
-          title="Three Workflows,"
-          gradientText="One Platform"
-          subtitle="Seamless experiences tailored for every stakeholder"
-        />
-        <div className="grid md:grid-cols-3 gap-6">
-          <WorkflowColumn title="🎓 Student Workflow" steps={studentSteps} color="primary" />
-          <WorkflowColumn title="🏢 Recruiter Workflow" steps={recruiterSteps} color="secondary" />
-          <WorkflowColumn title="🏫 Placement Cell Workflow" steps={placementSteps} color="accent" />
-        </div>
+        <AnimatedSection>
+          <SectionHeading badge="How It Works" title="Three Workflows," gradientText="One Platform" subtitle="Seamless experiences tailored for every stakeholder" />
+        </AnimatedSection>
+        <StaggerContainer className="grid md:grid-cols-3 gap-6">
+          <StaggerItem><WorkflowColumn title="🎓 Student Workflow" steps={studentSteps} /></StaggerItem>
+          <StaggerItem><WorkflowColumn title="🏢 Recruiter Workflow" steps={recruiterSteps} /></StaggerItem>
+          <StaggerItem><WorkflowColumn title="🏫 Placement Cell Workflow" steps={placementSteps} /></StaggerItem>
+        </StaggerContainer>
       </div>
     </section>
   </div>

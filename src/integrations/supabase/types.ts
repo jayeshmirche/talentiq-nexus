@@ -14,6 +14,86 @@ export type Database = {
   }
   public: {
     Tables: {
+      applications: {
+        Row: {
+          applied_date: string
+          id: string
+          interview_result: string | null
+          job_id: string
+          status: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          applied_date?: string
+          id?: string
+          interview_result?: string | null
+          job_id: string
+          status?: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          applied_date?: string
+          id?: string
+          interview_result?: string | null
+          job_id?: string
+          status?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "applications_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      jobs: {
+        Row: {
+          company_name: string
+          created_at: string
+          id: string
+          job_description: string | null
+          job_role: string
+          location: string | null
+          recruiter_id: string
+          required_skills: string[] | null
+          salary_offered: number | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          company_name: string
+          created_at?: string
+          id?: string
+          job_description?: string | null
+          job_role: string
+          location?: string | null
+          recruiter_id: string
+          required_skills?: string[] | null
+          salary_offered?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          company_name?: string
+          created_at?: string
+          id?: string
+          job_description?: string | null
+          job_role?: string
+          location?: string | null
+          recruiter_id?: string
+          required_skills?: string[] | null
+          salary_offered?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       placement_stats: {
         Row: {
           category: string
@@ -38,35 +118,145 @@ export type Database = {
         }
         Relationships: []
       }
+      placements: {
+        Row: {
+          company_name: string
+          department: string | null
+          id: string
+          job_id: string | null
+          placed_date: string
+          role: string
+          salary: number
+          student_id: string
+        }
+        Insert: {
+          company_name: string
+          department?: string | null
+          id?: string
+          job_id?: string | null
+          placed_date?: string
+          role: string
+          salary?: number
+          student_id: string
+        }
+        Update: {
+          company_name?: string
+          department?: string | null
+          id?: string
+          job_id?: string | null
+          placed_date?: string
+          role?: string
+          salary?: number
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "placements_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
+          career_readiness_score: number | null
+          certifications_count: number | null
+          cgpa: number | null
           created_at: string
+          department: string | null
           full_name: string | null
           id: string
+          mock_interview_score: number | null
           organization: string | null
+          phone_number: string | null
+          placement_score: number | null
+          placement_status: string | null
+          projects_count: number | null
+          resume_url: string | null
           role: string
+          skills: string[] | null
           updated_at: string
           user_id: string
         }
         Insert: {
           avatar_url?: string | null
+          career_readiness_score?: number | null
+          certifications_count?: number | null
+          cgpa?: number | null
           created_at?: string
+          department?: string | null
           full_name?: string | null
           id?: string
+          mock_interview_score?: number | null
           organization?: string | null
+          phone_number?: string | null
+          placement_score?: number | null
+          placement_status?: string | null
+          projects_count?: number | null
+          resume_url?: string | null
           role?: string
+          skills?: string[] | null
           updated_at?: string
           user_id: string
         }
         Update: {
           avatar_url?: string | null
+          career_readiness_score?: number | null
+          certifications_count?: number | null
+          cgpa?: number | null
           created_at?: string
+          department?: string | null
           full_name?: string | null
           id?: string
+          mock_interview_score?: number | null
           organization?: string | null
+          phone_number?: string | null
+          placement_score?: number | null
+          placement_status?: string | null
+          projects_count?: number | null
+          resume_url?: string | null
           role?: string
+          skills?: string[] | null
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_sessions: {
+        Row: {
+          device_info: string | null
+          id: string
+          ip_address: string | null
+          last_active_time: string
+          login_time: string
+          logout_time: string | null
+          role: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          device_info?: string | null
+          id?: string
+          ip_address?: string | null
+          last_active_time?: string
+          login_time?: string
+          logout_time?: string | null
+          role?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          device_info?: string | null
+          id?: string
+          ip_address?: string | null
+          last_active_time?: string
+          login_time?: string
+          logout_time?: string | null
+          role?: string
+          status?: string
           user_id?: string
         }
         Relationships: []

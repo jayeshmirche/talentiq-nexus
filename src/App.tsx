@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { AnimatePresence, motion } from "framer-motion";
+import { useSessionTracking } from "@/hooks/useSessionTracking";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AIChatWidget from "@/components/AIChatWidget";
@@ -17,6 +18,8 @@ import PricingPage from "./pages/PricingPage";
 import ContactPage from "./pages/ContactPage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import RoleSelectionPage from "./pages/RoleSelectionPage";
 import DashboardPreviewPage from "./pages/DashboardPreviewPage";
 import StudentDashboard from "./pages/StudentDashboard";
@@ -32,6 +35,11 @@ const DashboardRouter = () => {
   if (role === "recruiter") return <RecruiterDashboard />;
   if (role === "placement") return <PlacementDashboard />;
   return <StudentDashboard />;
+};
+
+const SessionTracker = ({ children }: { children: React.ReactNode }) => {
+  useSessionTracking();
+  return <>{children}</>;
 };
 
 const AnimatedRoutes = () => {
@@ -55,6 +63,8 @@ const AnimatedRoutes = () => {
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/get-started" element={<RoleSelectionPage />} />
           <Route path="/dashboard-preview" element={<DashboardPreviewPage />} />
           <Route path="/dashboard" element={<DashboardRouter />} />
@@ -72,10 +82,12 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
-            <Navbar />
-            <AnimatedRoutes />
-            <Footer />
-            <AIChatWidget />
+            <SessionTracker>
+              <Navbar />
+              <AnimatedRoutes />
+              <Footer />
+              <AIChatWidget />
+            </SessionTracker>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>

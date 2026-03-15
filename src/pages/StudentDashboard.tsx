@@ -1,45 +1,105 @@
+import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
-import { GraduationCap, Target, Route, Briefcase, TrendingUp, BookOpen, Award, ArrowRight } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { GraduationCap, Target, Route, Briefcase, TrendingUp, BookOpen, Award, ArrowRight, AlertTriangle, ExternalLink } from "lucide-react";
 import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, Radar } from "recharts";
 import AnimatedSection, { StaggerContainer, StaggerItem } from "@/components/AnimatedSection";
 import { motion } from "framer-motion";
+import { useProfile } from "@/hooks/useProfile";
+import { useJobs } from "@/hooks/useJobs";
+import { useStudentApplications } from "@/hooks/useApplications";
+import { calculatePlacementScore, calculateCareerReadiness, calculateSkillMatch, SKILL_RESOURCES } from "@/lib/skillEngine";
+import ResumeUpload from "@/components/ResumeUpload";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
-const radarData = [
-  { skill: "DSA", value: 85, fullMark: 100 },
-  { skill: "ML/AI", value: 60, fullMark: 100 },
-  { skill: "Web Dev", value: 90, fullMark: 100 },
-  { skill: "System Design", value: 55, fullMark: 100 },
-  { skill: "Communication", value: 75, fullMark: 100 },
-  { skill: "Leadership", value: 70, fullMark: 100 },
-];
-
-const roadmapSteps = [
-  { label: "Resume Polish", done: true },
-  { label: "DSA Practice", done: true },
-  { label: "Mock Interview", done: true },
-  { label: "Apply to Jobs", done: false },
-  { label: "Secure Offer", done: false },
-];
-
-const jobMatches = [
-  { company: "Google", role: "SDE II", match: 94, salary: "₹32L" },
-  { company: "Microsoft", role: "SDE", match: 91, salary: "₹28L" },
-  { company: "Amazon", role: "SDE I", match: 88, salary: "₹26L" },
-  { company: "Flipkart", role: "Backend Dev", match: 85, salary: "₹22L" },
-];
-
-const applications = [
-  { company: "Google", status: "Interview", color: "text-secondary" },
-  { company: "Microsoft", status: "Applied", color: "text-muted-foreground" },
-  { company: "Amazon", status: "Offer", color: "text-accent" },
-  { company: "Flipkart", status: "Rejected", color: "text-destructive" },
-];
+const STATUS_COLORS: Record<string, string> = {
+  applied: "text-muted-foreground",
+  shortlisted: "text-secondary",
+  interview: "text-secondary",
+  offer: "text-accent",
+  rejected: "text-destructive",
+};
 
 const StudentDashboard = () => {
   const { user } = useAuth();
-  const name = user?.user_metadata?.full_name || "Student";
+  const { profile, updateProfile } = useProfile();
+  const { jobs } = useJobs();
+  const { applications, applyToJob } = useStudentApplications();
+  const [editSkills, setEditSkills] = useState(false);
+  const [skillsInput, setSkillsInput] = useState("");
+
+  const name = profile?.full_name || user?.user_metadata?.full_name || "Student";
+  const skills = profile?.skills || [];
+  const cgpa = Number(profile?.cgpa) || 0;
+
+  // Calculate placement score
+  const placementScore = calculatePlacementScore({
+    cgpa,
+    skillScore: Math.min(skills.length * 12, 100),
+    projectScore: Math.min((profile?.projects_count || 0) * 20, 100),
+    certScore: Math.min((profile?.certifications_count || 0) * 25, 100),
+    mockScore: Number(profile?.mock_interview_score) || 0,
+    activityScore: Math.min(applications.length * 15, 100),
+  });
+
+  const careerReadiness = calculateCareerReadiness({
+    cgpa,
+    skillsCount: skills.length,
+    projectsCount: profile?.projects_count || 0,
+    certificationsCount: profile?.certifications_count || 0,
+  });
+
+  // Update scores in DB when they change
+  useEffect(() => {
+    if (profile && (profile.placement_score !== placementScore || profile.career_readiness_score !== careerReadiness)) {
+      updateProfile({ placement_score: placementScore, career_readiness_score: careerReadiness } as any);
+    }
+  }, [placementScore, careerReadiness, profile]);
+
+  // Build radar data from real skills
+  const radarData = skills.length > 0
+    ? skills.slice(0, 6).map((s, i) => ({ skill: s, value: Math.max(50, 100 - i * 8), fullMark: 100 }))
+    : [{ skill: "Add Skills", value: 0, fullMark: 100 }];
+
+  // Job matching
+  const jobMatches = jobs.map(job => {
+    const { matchScore } = calculateSkillMatch(skills, job.required_skills || []);
+    return { ...job, matchScore };
+  }).sort((a, b) => b.matchScore - a.matchScore).slice(0, 5);
+
+  // Skill gap across all matching jobs
+  const allMissingSkills = new Set<string>();
+  jobs.forEach(job => {
+    const { missingSkills } = calculateSkillMatch(skills, job.required_skills || []);
+    missingSkills.forEach(s => allMissingSkills.add(s));
+  });
+
+  const handleSaveSkills = async () => {
+    const newSkills = skillsInput.split(",").map(s => s.trim()).filter(Boolean);
+    await updateProfile({ skills: newSkills } as any);
+    setEditSkills(false);
+    toast.success("Skills updated!");
+  };
+
+  const handleApply = async (jobId: string) => {
+    const existing = applications.find(a => a.job_id === jobId);
+    if (existing) { toast.error("Already applied"); return; }
+    const error = await applyToJob(jobId);
+    if (!error) toast.success("Application submitted!");
+    else toast.error("Failed to apply");
+  };
+
+  // Roadmap steps based on real progress
+  const roadmapSteps = [
+    { label: "Complete Profile", done: !!profile?.full_name && !!profile?.department },
+    { label: "Upload Resume", done: !!profile?.resume_url },
+    { label: "Add Skills", done: skills.length > 0 },
+    { label: "Apply to Jobs", done: applications.length > 0 },
+    { label: "Secure Offer", done: applications.some(a => a.status === "offer") },
+  ];
 
   return (
     <div className="min-h-screen bg-background pt-20">
@@ -50,19 +110,33 @@ const StudentDashboard = () => {
               <h1 className="font-heading font-bold text-2xl text-foreground">Welcome back, <span className="gradient-text">{name}</span></h1>
               <p className="text-muted-foreground text-sm">Your AI-powered career dashboard</p>
             </div>
-            <Button variant="hero" size="sm">
-              <BookOpen size={16} /> Update Profile
-            </Button>
+            <Dialog open={editSkills} onOpenChange={setEditSkills}>
+              <DialogTrigger asChild>
+                <Button variant="hero" size="sm" onClick={() => setSkillsInput(skills.join(", "))}>
+                  <BookOpen size={16} /> Update Skills
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="glass border-border">
+                <DialogHeader><DialogTitle className="font-heading">Update Skills</DialogTitle></DialogHeader>
+                <Input
+                  placeholder="React, Python, SQL, Docker (comma separated)"
+                  value={skillsInput}
+                  onChange={e => setSkillsInput(e.target.value)}
+                  className="bg-muted border-border"
+                />
+                <Button variant="hero" onClick={handleSaveSkills}>Save Skills</Button>
+              </DialogContent>
+            </Dialog>
           </div>
         </AnimatedSection>
 
         {/* Stats row */}
         <StaggerContainer className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {[
-            { icon: Target, label: "Placement Score", value: "87%", sub: "High" },
-            { icon: Award, label: "Skills Matched", value: "12/15", sub: "80%" },
-            { icon: Briefcase, label: "Applications", value: "8", sub: "Active" },
-            { icon: TrendingUp, label: "Profile Views", value: "142", sub: "+23 this week" },
+            { icon: Target, label: "Placement Score", value: `${placementScore}%`, sub: placementScore >= 70 ? "High" : placementScore >= 40 ? "Medium" : "Low" },
+            { icon: Award, label: "Career Readiness", value: `${careerReadiness}/100`, sub: careerReadiness >= 70 ? "Ready" : "Building" },
+            { icon: Briefcase, label: "Applications", value: String(applications.length), sub: "Active" },
+            { icon: TrendingUp, label: "Skills", value: `${skills.length}`, sub: allMissingSkills.size > 0 ? `${allMissingSkills.size} gaps` : "Complete" },
           ].map((s) => (
             <StaggerItem key={s.label}>
               <div className="glass rounded-xl p-5 hover:glow-sm transition-all group">
@@ -77,6 +151,11 @@ const StudentDashboard = () => {
           ))}
         </StaggerContainer>
 
+        {/* Resume Upload */}
+        <AnimatedSection className="mb-6">
+          <ResumeUpload currentUrl={profile?.resume_url} />
+        </AnimatedSection>
+
         <div className="grid md:grid-cols-2 gap-6 mb-6">
           {/* Placement Probability */}
           <AnimatedSection>
@@ -88,10 +167,9 @@ const StudentDashboard = () => {
                     <circle cx="50" cy="50" r="42" fill="none" stroke="hsl(var(--muted))" strokeWidth="8" />
                     <motion.circle
                       cx="50" cy="50" r="42" fill="none"
-                      stroke="url(#probGrad)"
-                      strokeWidth="8" strokeLinecap="round"
+                      stroke="url(#probGrad)" strokeWidth="8" strokeLinecap="round"
                       initial={{ strokeDasharray: "0 264" }}
-                      whileInView={{ strokeDasharray: `${87 * 2.64} 264` }}
+                      whileInView={{ strokeDasharray: `${placementScore * 2.64} 264` }}
                       viewport={{ once: true }}
                       transition={{ duration: 1.5, ease: "easeOut" }}
                     />
@@ -103,31 +181,67 @@ const StudentDashboard = () => {
                     </defs>
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="font-heading font-bold text-3xl text-foreground">87%</span>
-                    <span className="text-primary text-xs font-medium">High</span>
+                    <span className="font-heading font-bold text-3xl text-foreground">{placementScore}%</span>
+                    <span className="text-primary text-xs font-medium">
+                      {placementScore >= 70 ? "High" : placementScore >= 40 ? "Medium" : "Low"}
+                    </span>
                   </div>
                 </div>
               </div>
-              <div className="mt-4 text-center">
-                <p className="text-muted-foreground text-xs">Based on CGPA, skills, projects & certifications</p>
-              </div>
+              <p className="mt-4 text-center text-muted-foreground text-xs">
+                Based on CGPA ({cgpa}), {skills.length} skills, {profile?.projects_count || 0} projects
+              </p>
             </div>
           </AnimatedSection>
 
           {/* Skill Gap Radar */}
           <AnimatedSection delay={0.1}>
             <div className="glass rounded-2xl p-6">
-              <h3 className="font-heading font-semibold text-foreground mb-4">Skill Gap Analysis</h3>
-              <ResponsiveContainer width="100%" height={220}>
-                <RadarChart data={radarData}>
-                  <PolarGrid stroke="hsl(var(--border))" />
-                  <PolarAngleAxis dataKey="skill" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} />
-                  <Radar dataKey="value" stroke="hsl(263, 70%, 50%)" fill="hsl(263, 70%, 50%)" fillOpacity={0.15} strokeWidth={2} />
-                </RadarChart>
-              </ResponsiveContainer>
+              <h3 className="font-heading font-semibold text-foreground mb-4">Skill Analysis</h3>
+              {skills.length > 0 ? (
+                <ResponsiveContainer width="100%" height={220}>
+                  <RadarChart data={radarData}>
+                    <PolarGrid stroke="hsl(var(--border))" />
+                    <PolarAngleAxis dataKey="skill" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} />
+                    <Radar dataKey="value" stroke="hsl(263, 70%, 50%)" fill="hsl(263, 70%, 50%)" fillOpacity={0.15} strokeWidth={2} />
+                  </RadarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-[220px] flex items-center justify-center">
+                  <p className="text-muted-foreground text-sm">Add skills to see your analysis</p>
+                </div>
+              )}
             </div>
           </AnimatedSection>
         </div>
+
+        {/* Missing Skills */}
+        {allMissingSkills.size > 0 && (
+          <AnimatedSection className="mb-6">
+            <div className="glass rounded-2xl p-6">
+              <h3 className="font-heading font-semibold text-foreground mb-4 flex items-center gap-2">
+                <AlertTriangle size={18} className="text-accent" /> Missing Skills & Resources
+              </h3>
+              <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {Array.from(allMissingSkills).slice(0, 6).map(skill => (
+                  <div key={skill} className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-foreground text-sm font-medium capitalize">{skill}</p>
+                    {SKILL_RESOURCES[skill.toLowerCase()] && (
+                      <a
+                        href={SKILL_RESOURCES[skill.toLowerCase()]}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary text-xs flex items-center gap-1 mt-1 hover:underline"
+                      >
+                        Learn <ExternalLink size={10} />
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </AnimatedSection>
+        )}
 
         {/* Career Roadmap */}
         <AnimatedSection className="mb-6">
@@ -160,24 +274,44 @@ const StudentDashboard = () => {
               <h3 className="font-heading font-semibold text-foreground mb-4 flex items-center gap-2">
                 <Briefcase size={18} className="text-primary" /> Smart Job Matches
               </h3>
-              <div className="space-y-3">
-                {jobMatches.map((job) => (
-                  <motion.div
-                    key={job.company}
-                    whileHover={{ x: 4 }}
-                    className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                  >
-                    <div>
-                      <p className="text-foreground text-sm font-medium">{job.company}</p>
-                      <p className="text-muted-foreground text-xs">{job.role}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-primary text-sm font-semibold">{job.match}%</p>
-                      <p className="text-muted-foreground text-xs">{job.salary}</p>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+              {jobMatches.length > 0 ? (
+                <div className="space-y-3">
+                  {jobMatches.map((job) => {
+                    const applied = applications.some(a => a.job_id === job.id);
+                    return (
+                      <motion.div
+                        key={job.id}
+                        whileHover={{ x: 4 }}
+                        className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                      >
+                        <div>
+                          <p className="text-foreground text-sm font-medium">{job.company_name}</p>
+                          <p className="text-muted-foreground text-xs">{job.job_role}</p>
+                        </div>
+                        <div className="text-right flex items-center gap-3">
+                          <div>
+                            <p className="text-primary text-sm font-semibold">{job.matchScore}%</p>
+                            <p className="text-muted-foreground text-xs">
+                              {job.salary_offered ? `₹${(Number(job.salary_offered) / 100000).toFixed(0)}L` : "—"}
+                            </p>
+                          </div>
+                          <Button
+                            variant={applied ? "ghost" : "hero"}
+                            size="sm"
+                            disabled={applied}
+                            onClick={() => handleApply(job.id)}
+                            className="text-xs"
+                          >
+                            {applied ? "Applied" : "Apply"}
+                          </Button>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-sm text-center py-8">No jobs posted yet</p>
+              )}
             </div>
           </AnimatedSection>
 
@@ -187,16 +321,23 @@ const StudentDashboard = () => {
               <h3 className="font-heading font-semibold text-foreground mb-4 flex items-center gap-2">
                 <GraduationCap size={18} className="text-primary" /> Application Tracker
               </h3>
-              <div className="space-y-3">
-                {applications.map((app) => (
-                  <div key={app.company} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                    <p className="text-foreground text-sm font-medium">{app.company}</p>
-                    <span className={`text-xs font-semibold px-3 py-1 rounded-full bg-background ${app.color}`}>
-                      {app.status}
-                    </span>
-                  </div>
-                ))}
-              </div>
+              {applications.length > 0 ? (
+                <div className="space-y-3">
+                  {applications.map((app) => (
+                    <div key={app.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                      <div>
+                        <p className="text-foreground text-sm font-medium">{app.job?.company_name || "—"}</p>
+                        <p className="text-muted-foreground text-xs">{app.job?.job_role || "—"}</p>
+                      </div>
+                      <span className={`text-xs font-semibold px-3 py-1 rounded-full bg-background capitalize ${STATUS_COLORS[app.status] || "text-muted-foreground"}`}>
+                        {app.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-sm text-center py-8">No applications yet. Apply to jobs to track them here.</p>
+              )}
             </div>
           </AnimatedSection>
         </div>

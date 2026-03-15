@@ -1,14 +1,13 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string, metadata: { full_name: string; role: string; organization: string }) => Promise<void>;
+  signUp: (email: string, password: string, metadata: Record<string, string>) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -38,7 +37,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, metadata: { full_name: string; role: string; organization: string }) => {
+  const signUp = async (email: string, password: string, metadata: Record<string, string>) => {
     const { error } = await supabase.auth.signUp({
       email,
       password,

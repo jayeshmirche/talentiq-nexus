@@ -365,7 +365,11 @@ const Index = () => {
                     <XAxis dataKey="name" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
                     <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
                     <Tooltip contentStyle={chartTooltipStyle} />
-                    <Bar dataKey="cost" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="cost" radius={[6, 6, 0, 0]}>
+                      {roiData.map((entry, index) => (
+                        <Cell key={index} fill={entry.fill} />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>

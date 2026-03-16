@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { GraduationCap, Target, Route, Briefcase, TrendingUp, BookOpen, Award, ArrowRight, AlertTriangle, ExternalLink } from "lucide-react";
+import { GraduationCap, Target, Route, Briefcase, TrendingUp, BookOpen, Award, ArrowRight, AlertTriangle, ExternalLink, Loader2, Sparkles } from "lucide-react";
 import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, Radar } from "recharts";
 import AnimatedSection, { StaggerContainer, StaggerItem } from "@/components/AnimatedSection";
 import { motion } from "framer-motion";
@@ -13,7 +13,8 @@ import { calculatePlacementScore, calculateCareerReadiness, calculateSkillMatch,
 import ResumeUpload from "@/components/ResumeUpload";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { useCareerRoadmap } from "@/hooks/useCareerRoadmap";
+import { ResumeAnalysis } from "@/hooks/useResumeAnalysis";
 
 const STATUS_COLORS: Record<string, string> = {
   applied: "text-muted-foreground",
@@ -25,11 +26,13 @@ const STATUS_COLORS: Record<string, string> = {
 
 const StudentDashboard = () => {
   const { user } = useAuth();
-  const { profile, updateProfile } = useProfile();
+  const { profile, updateProfile, refetch } = useProfile();
   const { jobs } = useJobs();
   const { applications, applyToJob } = useStudentApplications();
   const [editSkills, setEditSkills] = useState(false);
   const [skillsInput, setSkillsInput] = useState("");
+  const { generateRoadmap, loading: roadmapLoading, roadmap } = useCareerRoadmap();
+  const [resumeAnalysis, setResumeAnalysis] = useState<ResumeAnalysis | null>(null);
 
   const name = profile?.full_name || user?.user_metadata?.full_name || "Student";
   const skills = profile?.skills || [];
@@ -81,7 +84,8 @@ const StudentDashboard = () => {
     const newSkills = skillsInput.split(",").map(s => s.trim()).filter(Boolean);
     await updateProfile({ skills: newSkills } as any);
     setEditSkills(false);
-    toast.success("Skills updated!");
+    toast.success("Skills updated! Scores recalculated.");
+    await refetch();
   };
 
   const handleApply = async (jobId: string) => {
@@ -92,14 +96,24 @@ const StudentDashboard = () => {
     else toast.error("Failed to apply");
   };
 
-  // Roadmap steps based on real progress
-  const roadmapSteps = [
-    { label: "Complete Profile", done: !!profile?.full_name && !!profile?.department },
-    { label: "Upload Resume", done: !!profile?.resume_url },
-    { label: "Add Skills", done: skills.length > 0 },
-    { label: "Apply to Jobs", done: applications.length > 0 },
-    { label: "Secure Offer", done: applications.some(a => a.status === "offer") },
+  const handleResumeComplete = async (_url: string, analysis?: ResumeAnalysis | null) => {
+    if (analysis) {
+      setResumeAnalysis(analysis);
+    }
+    // Refetch profile to get updated skills from analysis
+    await refetch();
+  };
+
+  // Roadmap: use AI-generated or fallback to progress-based
+  const fallbackRoadmapSteps = [
+    { label: "Complete Profile", description: "Add your name, department, and CGPA", done: !!profile?.full_name && !!profile?.department },
+    { label: "Upload Resume", description: "Upload your latest resume for AI analysis", done: !!profile?.resume_url },
+    { label: "Add Skills", description: "List your technical and soft skills", done: skills.length > 0 },
+    { label: "Apply to Jobs", description: "Start applying to matching job openings", done: applications.length > 0 },
+    { label: "Secure Offer", description: "Get selected through interviews", done: applications.some(a => a.status === "offer") },
   ];
+
+  const roadmapSteps = roadmap?.steps || fallbackRoadmapSteps;
 
   return (
     <div className="min-h-screen bg-background pt-20">
@@ -153,7 +167,47 @@ const StudentDashboard = () => {
 
         {/* Resume Upload */}
         <AnimatedSection className="mb-6">
-          <ResumeUpload currentUrl={profile?.resume_url} />
+          <ResumeUpload currentUrl={profile?.resume_url} onUploadComplete={handleResumeComplete} />
+          {resumeAnalysis && (
+            <div className="glass rounded-xl p-5 mt-3">
+              <h4 className="font-heading font-semibold text-foreground text-sm mb-3 flex items-center gap-2">
+                <Sparkles size={16} className="text-accent" /> Resume Analysis
+              </h4>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-xs text-muted-foreground mb-1">Resume Score</p>
+                  <p className="font-heading font-bold text-xl text-primary">{resumeAnalysis.resume_score}/100</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-xs text-muted-foreground mb-1">Skills Detected</p>
+                  <p className="font-heading font-bold text-xl text-foreground">{resumeAnalysis.detected_skills.length}</p>
+                </div>
+              </div>
+              {resumeAnalysis.strengths.length > 0 && (
+                <div className="mt-3">
+                  <p className="text-xs text-muted-foreground mb-1">Strengths</p>
+                  <div className="flex flex-wrap gap-1">
+                    {resumeAnalysis.strengths.map(s => (
+                      <span key={s} className="text-xs px-2 py-1 rounded-full bg-accent/10 text-accent">{s}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {resumeAnalysis.weaknesses.length > 0 && (
+                <div className="mt-3">
+                  <p className="text-xs text-muted-foreground mb-1">Areas to Improve</p>
+                  <div className="flex flex-wrap gap-1">
+                    {resumeAnalysis.weaknesses.map(w => (
+                      <span key={w} className="text-xs px-2 py-1 rounded-full bg-destructive/10 text-destructive">{w}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {resumeAnalysis.summary && (
+                <p className="mt-3 text-xs text-muted-foreground">{resumeAnalysis.summary}</p>
+              )}
+            </div>
+          )}
         </AnimatedSection>
 
         <div className="grid md:grid-cols-2 gap-6 mb-6">
@@ -169,8 +223,7 @@ const StudentDashboard = () => {
                       cx="50" cy="50" r="42" fill="none"
                       stroke="url(#probGrad)" strokeWidth="8" strokeLinecap="round"
                       initial={{ strokeDasharray: "0 264" }}
-                      whileInView={{ strokeDasharray: `${placementScore * 2.64} 264` }}
-                      viewport={{ once: true }}
+                      animate={{ strokeDasharray: `${placementScore * 2.64} 264` }}
                       transition={{ duration: 1.5, ease: "easeOut" }}
                     />
                     <defs>
@@ -189,7 +242,7 @@ const StudentDashboard = () => {
                 </div>
               </div>
               <p className="mt-4 text-center text-muted-foreground text-xs">
-                Based on CGPA ({cgpa}), {skills.length} skills, {profile?.projects_count || 0} projects
+                Based on CGPA ({cgpa}), {skills.length} skills, {profile?.projects_count || 0} projects, {applications.length} applications
               </p>
             </div>
           </AnimatedSection>
@@ -246,9 +299,24 @@ const StudentDashboard = () => {
         {/* Career Roadmap */}
         <AnimatedSection className="mb-6">
           <div className="glass rounded-2xl p-6">
-            <h3 className="font-heading font-semibold text-foreground mb-4 flex items-center gap-2">
-              <Route size={18} className="text-primary" /> Career Roadmap
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-heading font-semibold text-foreground flex items-center gap-2">
+                <Route size={18} className="text-primary" /> Career Roadmap
+              </h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={generateRoadmap}
+                disabled={roadmapLoading}
+                className="text-xs"
+              >
+                {roadmapLoading ? <Loader2 className="animate-spin" size={14} /> : <Sparkles size={14} />}
+                {roadmapLoading ? "Generating..." : "AI Roadmap"}
+              </Button>
+            </div>
+            {roadmap?.advice && (
+              <p className="text-accent text-xs mb-3 italic">{roadmap.advice}</p>
+            )}
             <div className="flex items-center gap-2 overflow-x-auto pb-2">
               {roadmapSteps.map((step, i) => (
                 <div key={step.label} className="flex items-center gap-2 flex-shrink-0">
@@ -257,6 +325,7 @@ const StudentDashboard = () => {
                     className={`px-4 py-2.5 rounded-lg text-xs font-medium transition-all ${
                       step.done ? "gradient-primary text-primary-foreground" : "glass text-muted-foreground border border-dashed border-border"
                     }`}
+                    title={step.description}
                   >
                     {step.label}
                   </motion.div>

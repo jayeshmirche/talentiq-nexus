@@ -8,7 +8,13 @@ import {
   FileSpreadsheet, Brain, TrendingUp, GraduationCap, Building2, School,
   ArrowRight, Play, Star, ChevronRight, Zap, Shield, BarChart3
 } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend } from "recharts";
+import iitDelhiLogo from "@/assets/logos/iit-delhi.png";
+import nitTrichyLogo from "@/assets/logos/nit-trichy.png";
+import bitsPilaniLogo from "@/assets/logos/bits-pilani.png";
+import vitLogo from "@/assets/logos/vit.png";
+import srmLogo from "@/assets/logos/srm.png";
+import iiitHyderabadLogo from "@/assets/logos/iiit-hyderabad.png";
 
 const placementData = [
   { name: "Before", value: 62, fill: "hsl(var(--muted-foreground))" },
@@ -178,9 +184,23 @@ const Index = () => {
       {/* Trusted By */}
       <AnimatedSection className="py-12 border-y border-border/30">
         <div className="section-container">
-          <div className="flex flex-wrap items-center justify-center gap-8 md:gap-16 opacity-50">
-            {["IIT Delhi", "NIT Trichy", "BITS Pilani", "VIT", "SRM University", "IIIT Hyderabad"].map((name) => (
-              <span key={name} className="font-heading font-semibold text-muted-foreground text-sm tracking-wider uppercase">{name}</span>
+          <div className="flex flex-wrap items-center justify-center gap-8 md:gap-14">
+            {[
+              { name: "IIT Delhi", logo: iitDelhiLogo },
+              { name: "NIT Trichy", logo: nitTrichyLogo },
+              { name: "BITS Pilani", logo: bitsPilaniLogo },
+              { name: "VIT", logo: vitLogo },
+              { name: "SRM University", logo: srmLogo },
+              { name: "IIIT Hyderabad", logo: iiitHyderabadLogo },
+            ].map((college) => (
+              <motion.div
+                key={college.name}
+                whileHover={{ scale: 1.08, opacity: 1 }}
+                className="flex items-center gap-2.5 opacity-60 transition-opacity duration-300 hover:opacity-100 cursor-default"
+              >
+                <img src={college.logo} alt={`${college.name} logo`} className="h-8 w-8 object-contain" />
+                <span className="font-heading font-semibold text-muted-foreground text-sm tracking-wider uppercase">{college.name}</span>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -282,9 +302,13 @@ const Index = () => {
                     <GradientDefs />
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="name" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
-                    <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
+                    <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} domain={[0, 100]} />
                     <Tooltip contentStyle={chartTooltipStyle} />
-                    <Bar dataKey="value" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                      {placementData.map((entry, index) => (
+                        <Cell key={index} fill={entry.fill} />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -299,7 +323,11 @@ const Index = () => {
                     <XAxis dataKey="name" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
                     <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
                     <Tooltip contentStyle={chartTooltipStyle} />
-                    <Bar dataKey="days" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="days" radius={[6, 6, 0, 0]}>
+                      {hiringSpeed.map((entry, index) => (
+                        <Cell key={index} fill={entry.fill} />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -337,7 +365,11 @@ const Index = () => {
                     <XAxis dataKey="name" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
                     <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
                     <Tooltip contentStyle={chartTooltipStyle} />
-                    <Bar dataKey="cost" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="cost" radius={[6, 6, 0, 0]}>
+                      {roiData.map((entry, index) => (
+                        <Cell key={index} fill={entry.fill} />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>

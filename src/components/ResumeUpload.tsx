@@ -1,13 +1,14 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Upload, FileText, Loader2, CheckCircle, X } from "lucide-react";
+import { Upload, FileText, Loader2, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { useResumeAnalysis, ResumeAnalysis } from "@/hooks/useResumeAnalysis";
 
 interface ResumeUploadProps {
   currentUrl?: string | null;
-  onUploadComplete?: (url: string) => void;
+  onUploadComplete?: (url: string, analysis?: ResumeAnalysis | null) => void;
 }
 
 const ResumeUpload = ({ currentUrl, onUploadComplete }: ResumeUploadProps) => {
@@ -15,6 +16,7 @@ const ResumeUpload = ({ currentUrl, onUploadComplete }: ResumeUploadProps) => {
   const [uploading, setUploading] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const { analyzeResume, analyzing } = useResumeAnalysis();
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -54,20 +56,30 @@ const ResumeUpload = ({ currentUrl, onUploadComplete }: ResumeUploadProps) => {
         .update({ resume_url: resumeUrl } as any)
         .eq("user_id", user.id);
 
-      toast.success("Resume uploaded successfully!");
-      onUploadComplete?.(resumeUrl);
+      toast.success("Resume uploaded! Analyzing...");
+      setUploading(false);
+
+      // Trigger AI resume analysis
+      const analysis = await analyzeResume(resumeUrl);
+      if (analysis) {
+        toast.success(`Resume analyzed! Score: ${analysis.resume_score}/100. Found ${analysis.detected_skills.length} skills.`);
+      }
+
+      onUploadComplete?.(resumeUrl, analysis);
     } catch (error: any) {
       toast.error(error.message || "Upload failed");
       setFileName(null);
-    } finally {
       setUploading(false);
     }
   };
+
+  const isProcessing = uploading || analyzing;
 
   return (
     <div className="glass rounded-xl p-5">
       <h4 className="font-heading font-semibold text-foreground text-sm mb-3 flex items-center gap-2">
         <FileText size={16} className="text-primary" /> Resume
+        {analyzing && <span className="text-xs text-accent animate-pulse">AI analyzing...</span>}
       </h4>
       <input
         ref={fileRef}
@@ -86,9 +98,10 @@ const ResumeUpload = ({ currentUrl, onUploadComplete }: ResumeUploadProps) => {
             variant="ghost"
             size="icon"
             className="h-6 w-6"
+            disabled={isProcessing}
             onClick={() => fileRef.current?.click()}
           >
-            <Upload size={12} />
+            {analyzing ? <Loader2 className="animate-spin" size={12} /> : <Upload size={12} />}
           </Button>
         </div>
       ) : (
@@ -96,10 +109,10 @@ const ResumeUpload = ({ currentUrl, onUploadComplete }: ResumeUploadProps) => {
           variant="hero-outline"
           size="sm"
           className="w-full"
-          disabled={uploading}
+          disabled={isProcessing}
           onClick={() => fileRef.current?.click()}
         >
-          {uploading ? (
+          {isProcessing ? (
             <Loader2 className="animate-spin" size={14} />
           ) : (
             <>

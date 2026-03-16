@@ -184,9 +184,23 @@ const Index = () => {
       {/* Trusted By */}
       <AnimatedSection className="py-12 border-y border-border/30">
         <div className="section-container">
-          <div className="flex flex-wrap items-center justify-center gap-8 md:gap-16 opacity-50">
-            {["IIT Delhi", "NIT Trichy", "BITS Pilani", "VIT", "SRM University", "IIIT Hyderabad"].map((name) => (
-              <span key={name} className="font-heading font-semibold text-muted-foreground text-sm tracking-wider uppercase">{name}</span>
+          <div className="flex flex-wrap items-center justify-center gap-8 md:gap-14">
+            {[
+              { name: "IIT Delhi", logo: iitDelhiLogo },
+              { name: "NIT Trichy", logo: nitTrichyLogo },
+              { name: "BITS Pilani", logo: bitsPilaniLogo },
+              { name: "VIT", logo: vitLogo },
+              { name: "SRM University", logo: srmLogo },
+              { name: "IIIT Hyderabad", logo: iiitHyderabadLogo },
+            ].map((college) => (
+              <motion.div
+                key={college.name}
+                whileHover={{ scale: 1.08, opacity: 1 }}
+                className="flex items-center gap-2.5 opacity-60 transition-opacity duration-300 hover:opacity-100 cursor-default"
+              >
+                <img src={college.logo} alt={`${college.name} logo`} className="h-8 w-8 object-contain" />
+                <span className="font-heading font-semibold text-muted-foreground text-sm tracking-wider uppercase">{college.name}</span>
+              </motion.div>
             ))}
           </div>
         </div>

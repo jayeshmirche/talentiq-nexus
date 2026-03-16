@@ -302,9 +302,13 @@ const Index = () => {
                     <GradientDefs />
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="name" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
-                    <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
+                    <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} domain={[0, 100]} />
                     <Tooltip contentStyle={chartTooltipStyle} />
-                    <Bar dataKey="value" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                      {placementData.map((entry, index) => (
+                        <Cell key={index} fill={entry.fill} />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -319,7 +323,11 @@ const Index = () => {
                     <XAxis dataKey="name" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
                     <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
                     <Tooltip contentStyle={chartTooltipStyle} />
-                    <Bar dataKey="days" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="days" radius={[6, 6, 0, 0]}>
+                      {hiringSpeed.map((entry, index) => (
+                        <Cell key={index} fill={entry.fill} />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>

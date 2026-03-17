@@ -178,10 +178,12 @@ const StudentDashboard = () => {
         <AnimatedSection className="mb-6">
           <ResumeUpload currentUrl={profile?.resume_url} onUploadComplete={handleResumeComplete} />
           {resumeAnalysis && (
-            <div className="glass rounded-xl p-5 mt-3">
-              <h4 className="font-heading font-semibold text-foreground text-sm mb-3 flex items-center gap-2">
-                <Sparkles size={16} className="text-accent" /> Resume Analysis
+            <div className="glass rounded-xl p-5 mt-3 space-y-4">
+              <h4 className="font-heading font-semibold text-foreground text-sm flex items-center gap-2">
+                <Sparkles size={16} className="text-accent" /> Resume Analysis & Insights
               </h4>
+
+              {/* Score + Summary */}
               <div className="grid sm:grid-cols-2 gap-3">
                 <div className="p-3 rounded-lg bg-muted/50">
                   <p className="text-xs text-muted-foreground mb-1">Resume Score</p>
@@ -192,28 +194,115 @@ const StudentDashboard = () => {
                   <p className="font-heading font-bold text-xl text-foreground">{resumeAnalysis.detected_skills.length}</p>
                 </div>
               </div>
-              {resumeAnalysis.strengths.length > 0 && (
-                <div className="mt-3">
-                  <p className="text-xs text-muted-foreground mb-1">Strengths</p>
-                  <div className="flex flex-wrap gap-1">
-                    {resumeAnalysis.strengths.map(s => (
-                      <span key={s} className="text-xs px-2 py-1 rounded-full bg-accent/10 text-accent">{s}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {resumeAnalysis.weaknesses.length > 0 && (
-                <div className="mt-3">
-                  <p className="text-xs text-muted-foreground mb-1">Areas to Improve</p>
-                  <div className="flex flex-wrap gap-1">
-                    {resumeAnalysis.weaknesses.map(w => (
-                      <span key={w} className="text-xs px-2 py-1 rounded-full bg-destructive/10 text-destructive">{w}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
               {resumeAnalysis.summary && (
-                <p className="mt-3 text-xs text-muted-foreground">{resumeAnalysis.summary}</p>
+                <p className="text-xs text-muted-foreground italic border-l-2 border-primary pl-3">{resumeAnalysis.summary}</p>
+              )}
+
+              {/* Detected Skills */}
+              {resumeAnalysis.detected_skills.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-foreground mb-2 flex items-center gap-1"><CheckCircle2 size={12} className="text-accent" /> Detected Skills</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {resumeAnalysis.detected_skills.map(s => (
+                      <span key={s} className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary capitalize">{s}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Detected Projects */}
+              {resumeAnalysis.projects && resumeAnalysis.projects.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-foreground mb-2 flex items-center gap-1"><Briefcase size={12} className="text-secondary" /> Detected Projects</p>
+                  <div className="space-y-2">
+                    {resumeAnalysis.projects.map((p, i) => (
+                      <div key={i} className="p-2.5 rounded-lg bg-muted/50">
+                        <p className="text-foreground text-sm font-medium">{typeof p === "string" ? p : p.title}</p>
+                        {typeof p !== "string" && p.technologies?.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {p.technologies.map(t => (
+                              <span key={t} className="text-[10px] px-1.5 py-0.5 rounded bg-secondary/10 text-secondary">{t}</span>
+                            ))}
+                          </div>
+                        )}
+                        {typeof p !== "string" && p.description && (
+                          <p className="text-muted-foreground text-[11px] mt-1">{p.description}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Strengths & Weaknesses */}
+              <div className="grid sm:grid-cols-2 gap-3">
+                {resumeAnalysis.strengths.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-foreground mb-2 flex items-center gap-1"><TrendingUp size={12} className="text-accent" /> Strengths</p>
+                    <div className="flex flex-wrap gap-1">
+                      {resumeAnalysis.strengths.map(s => (
+                        <span key={s} className="text-xs px-2 py-1 rounded-full bg-accent/10 text-accent">{s}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {resumeAnalysis.weaknesses.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-foreground mb-2 flex items-center gap-1"><AlertTriangle size={12} className="text-destructive" /> Areas to Improve</p>
+                    <div className="flex flex-wrap gap-1">
+                      {resumeAnalysis.weaknesses.map(w => (
+                        <span key={w} className="text-xs px-2 py-1 rounded-full bg-destructive/10 text-destructive">{w}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Improvement Suggestions */}
+              {resumeAnalysis.suggested_skills && resumeAnalysis.suggested_skills.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-foreground mb-2 flex items-center gap-1"><Lightbulb size={12} className="text-secondary" /> Suggested Skills to Learn</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {resumeAnalysis.suggested_skills.map(s => (
+                      <span key={s} className="text-xs px-2 py-1 rounded-full bg-secondary/10 text-secondary border border-secondary/20">{s}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {resumeAnalysis.suggested_projects && resumeAnalysis.suggested_projects.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-foreground mb-2 flex items-center gap-1"><ArrowUpRight size={12} className="text-primary" /> Suggested Project Ideas</p>
+                  <div className="space-y-1.5">
+                    {resumeAnalysis.suggested_projects.map((p, i) => (
+                      <div key={i} className="flex items-start gap-2 p-2 rounded-lg bg-muted/50">
+                        <span className="text-primary text-xs mt-0.5">→</span>
+                        <span className="text-foreground text-xs">{p}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {resumeAnalysis.improvement_suggestions && resumeAnalysis.improvement_suggestions.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-foreground mb-2 flex items-center gap-1"><Award size={12} className="text-accent" /> Action Items</p>
+                  <div className="space-y-1.5">
+                    {resumeAnalysis.improvement_suggestions.map((item, i) => (
+                      <div key={i} className="flex items-start gap-2 p-2 rounded-lg bg-muted/50">
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold uppercase flex-shrink-0 ${
+                          item.priority === "high" ? "bg-destructive/10 text-destructive" :
+                          item.priority === "medium" ? "bg-secondary/10 text-secondary" :
+                          "bg-muted text-muted-foreground"
+                        }`}>{item.priority}</span>
+                        <div>
+                          <span className="text-foreground text-xs font-medium">{item.category}: </span>
+                          <span className="text-muted-foreground text-xs">{item.suggestion}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
           )}

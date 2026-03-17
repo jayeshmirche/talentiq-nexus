@@ -11,6 +11,31 @@ interface ResumeUploadProps {
   onUploadComplete?: (url: string, analysis?: ResumeAnalysis | null) => void;
 }
 
+// Client-side PDF text extraction using pdf.js CDN
+async function extractTextFromPdf(file: File): Promise<string> {
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    // Dynamic import of pdf.js from CDN
+    const pdfjsLib = await import("https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.min.mjs" as any);
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.worker.min.mjs";
+    
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const textParts: string[] = [];
+    
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      const pageText = content.items.map((item: any) => item.str).join(" ");
+      textParts.push(pageText);
+    }
+    
+    return textParts.join("\n\n");
+  } catch (e) {
+    console.warn("PDF text extraction failed, will rely on AI analysis:", e);
+    return "";
+  }
+}
+
 const ResumeUpload = ({ currentUrl, onUploadComplete }: ResumeUploadProps) => {
   const { user } = useAuth();
   const [uploading, setUploading] = useState(false);
@@ -40,6 +65,14 @@ const ResumeUpload = ({ currentUrl, onUploadComplete }: ResumeUploadProps) => {
     setFileName(file.name);
 
     try {
+      // Step 1: Extract text from PDF
+      let extractedText = "";
+      if (file.type === "application/pdf") {
+        toast.info("Extracting text from resume...");
+        extractedText = await extractTextFromPdf(file);
+      }
+
+      // Step 2: Upload file to storage
       const filePath = `${user.id}/${Date.now()}_${file.name}`;
       const { error: uploadError } = await supabase.storage
         .from("resumes")
@@ -50,17 +83,17 @@ const ResumeUpload = ({ currentUrl, onUploadComplete }: ResumeUploadProps) => {
       const { data: urlData } = supabase.storage.from("resumes").getPublicUrl(filePath);
       const resumeUrl = urlData.publicUrl;
 
-      // Update profile with resume URL
+      // Step 3: Update profile with resume URL
       await supabase
         .from("profiles")
         .update({ resume_url: resumeUrl } as any)
         .eq("user_id", user.id);
 
-      toast.success("Resume uploaded! Analyzing...");
+      toast.success("Resume uploaded! Analyzing with AI...");
       setUploading(false);
 
-      // Trigger AI resume analysis
-      const analysis = await analyzeResume(resumeUrl);
+      // Step 4: Trigger AI analysis with extracted text
+      const analysis = await analyzeResume(resumeUrl, extractedText);
       if (analysis) {
         toast.success(`Resume analyzed! Score: ${analysis.resume_score}/100. Found ${analysis.detected_skills.length} skills.`);
       }

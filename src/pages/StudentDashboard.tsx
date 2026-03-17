@@ -14,7 +14,8 @@ import ResumeUpload from "@/components/ResumeUpload";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useCareerRoadmap } from "@/hooks/useCareerRoadmap";
-import { ResumeAnalysis } from "@/hooks/useResumeAnalysis";
+import { ResumeAnalysis, useResumeAnalysis } from "@/hooks/useResumeAnalysis";
+import { CheckCircle2, Lightbulb, ArrowUpRight } from "lucide-react";
 
 const STATUS_COLORS: Record<string, string> = {
   applied: "text-muted-foreground",

@@ -167,6 +167,7 @@ export type Database = {
           cgpa: number | null
           created_at: string
           department: string | null
+          extracted_resume_text: string | null
           full_name: string | null
           id: string
           mock_interview_score: number | null
@@ -188,6 +189,7 @@ export type Database = {
           cgpa?: number | null
           created_at?: string
           department?: string | null
+          extracted_resume_text?: string | null
           full_name?: string | null
           id?: string
           mock_interview_score?: number | null
@@ -209,6 +211,7 @@ export type Database = {
           cgpa?: number | null
           created_at?: string
           department?: string | null
+          extracted_resume_text?: string | null
           full_name?: string | null
           id?: string
           mock_interview_score?: number | null
@@ -222,6 +225,57 @@ export type Database = {
           skills?: string[] | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      resume_analysis: {
+        Row: {
+          created_at: string
+          detected_skills: string[] | null
+          id: string
+          improvement_suggestions: Json | null
+          projects: Json | null
+          resume_score: number | null
+          resume_url: string | null
+          strengths: string[] | null
+          student_id: string
+          suggested_projects: string[] | null
+          suggested_skills: string[] | null
+          summary: string | null
+          updated_at: string
+          weaknesses: string[] | null
+        }
+        Insert: {
+          created_at?: string
+          detected_skills?: string[] | null
+          id?: string
+          improvement_suggestions?: Json | null
+          projects?: Json | null
+          resume_score?: number | null
+          resume_url?: string | null
+          strengths?: string[] | null
+          student_id: string
+          suggested_projects?: string[] | null
+          suggested_skills?: string[] | null
+          summary?: string | null
+          updated_at?: string
+          weaknesses?: string[] | null
+        }
+        Update: {
+          created_at?: string
+          detected_skills?: string[] | null
+          id?: string
+          improvement_suggestions?: Json | null
+          projects?: Json | null
+          resume_score?: number | null
+          resume_url?: string | null
+          strengths?: string[] | null
+          student_id?: string
+          suggested_projects?: string[] | null
+          suggested_skills?: string[] | null
+          summary?: string | null
+          updated_at?: string
+          weaknesses?: string[] | null
         }
         Relationships: []
       }

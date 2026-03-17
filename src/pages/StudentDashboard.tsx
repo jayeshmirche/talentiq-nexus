@@ -33,7 +33,15 @@ const StudentDashboard = () => {
   const [editSkills, setEditSkills] = useState(false);
   const [skillsInput, setSkillsInput] = useState("");
   const { generateRoadmap, loading: roadmapLoading, roadmap } = useCareerRoadmap();
+  const { fetchStoredAnalysis, analysis: storedAnalysis } = useResumeAnalysis();
   const [resumeAnalysis, setResumeAnalysis] = useState<ResumeAnalysis | null>(null);
+
+  // Load stored analysis on mount
+  useEffect(() => {
+    if (profile?.resume_url && !resumeAnalysis) {
+      fetchStoredAnalysis().then(a => { if (a) setResumeAnalysis(a); });
+    }
+  }, [profile?.resume_url]);
 
   const name = profile?.full_name || user?.user_metadata?.full_name || "Student";
   const skills = profile?.skills || [];

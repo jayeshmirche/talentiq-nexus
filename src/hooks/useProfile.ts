@@ -12,6 +12,7 @@ export interface Profile {
   department: string | null;
   cgpa: number | null;
   resume_url: string | null;
+  cgpa_verified: boolean;
   skills: string[];
   projects_count: number;
   certifications_count: number;

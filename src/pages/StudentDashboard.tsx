@@ -47,11 +47,39 @@ const StudentDashboard = () => {
 
   const name = profile?.full_name || user?.user_metadata?.full_name || "Student";
   const skills = profile?.skills || [];
-  const cgpa = Number(profile?.cgpa) || 0;
+  const cgpa = profile?.cgpa != null ? Number(profile.cgpa) : null;
+  const cgpaVerified = (profile as any)?.cgpa_verified ?? false;
+  const [cgpaInput, setCgpaInput] = useState("");
+  const [showCgpaEdit, setShowCgpaEdit] = useState(false);
 
-  // Calculate placement score
+  useEffect(() => {
+    if (cgpa != null) setCgpaInput(String(cgpa));
+  }, [cgpa]);
+
+  const handleSaveCgpa = async () => {
+    const val = parseFloat(cgpaInput);
+    if (isNaN(val) || val < 0 || val > 10) { toast.error("Enter a valid CGPA (0-10)"); return; }
+    await updateProfile({ cgpa: val } as any);
+    setShowCgpaEdit(false);
+    toast.success("CGPA updated!");
+    await refetch();
+  };
+
+  const handleToggleVerified = async (checked: boolean) => {
+    await updateProfile({ cgpa_verified: checked } as any);
+    toast.success(checked ? "CGPA marked as verified" : "CGPA verification removed");
+    await refetch();
+  };
+
+  // Calculate placement score — skip CGPA weight if null
+  const cgpaWeight = cgpa != null ? 0.30 : 0;
+  const cgpaBonus = cgpaVerified ? 1.05 : 1.0; // 5% boost for verified
+  const totalOtherWeight = 1 - cgpaWeight;
+  const baseOtherWeight = 0.70; // sum of non-cgpa weights
+  const otherScale = cgpaWeight > 0 ? 1 : totalOtherWeight / baseOtherWeight;
+
   const placementScore = calculatePlacementScore({
-    cgpa,
+    cgpa: cgpa != null ? cgpa * cgpaBonus : 0,
     skillScore: Math.min(skills.length * 12, 100),
     projectScore: Math.min((profile?.projects_count || 0) * 20, 100),
     certScore: Math.min((profile?.certifications_count || 0) * 25, 100),

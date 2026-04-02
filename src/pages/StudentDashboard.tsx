@@ -415,7 +415,7 @@ const StudentDashboard = () => {
                 </div>
               </div>
               <p className="mt-4 text-center text-muted-foreground text-xs">
-                Based on CGPA ({cgpa}), {skills.length} skills, {profile?.projects_count || 0} projects, {applications.length} applications
+                Based on CGPA ({cgpa != null ? `${cgpa}${cgpaVerified ? ' ✅' : ''}` : 'N/A'}), {skills.length} skills, {profile?.projects_count || 0} projects, {applications.length} applications
               </p>
             </div>
           </AnimatedSection>

@@ -183,6 +183,51 @@ const StudentDashboard = () => {
           </div>
         </AnimatedSection>
 
+        {/* CGPA Section */}
+        <AnimatedSection className="mb-6">
+          <div className="glass rounded-xl p-5">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="font-heading font-semibold text-foreground text-sm flex items-center gap-2">
+                <GraduationCap size={16} className="text-primary" /> CGPA
+              </h4>
+              <Button variant="ghost" size="sm" onClick={() => setShowCgpaEdit(!showCgpaEdit)}>
+                {showCgpaEdit ? "Cancel" : cgpa != null ? "Edit CGPA" : "Add CGPA"}
+              </Button>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="font-heading font-bold text-2xl text-foreground">
+                {cgpa != null ? cgpa.toFixed(2) : "Not Available"}
+              </span>
+              {cgpa != null && (
+                <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${
+                  cgpaVerified 
+                    ? "bg-accent/10 text-accent" 
+                    : "bg-secondary/10 text-secondary"
+                }`}>
+                  {cgpaVerified ? <><ShieldCheck size={12} /> Verified ✅</> : <><ShieldAlert size={12} /> Not Verified ⚠️</>}
+                </span>
+              )}
+            </div>
+            {showCgpaEdit && (
+              <div className="mt-3 flex items-end gap-3">
+                <div className="flex-1">
+                  <Label className="text-xs text-muted-foreground mb-1">Enter your CGPA (0-10)</Label>
+                  <Input
+                    type="number" step="0.01" min="0" max="10"
+                    value={cgpaInput} onChange={e => setCgpaInput(e.target.value)}
+                    placeholder="e.g. 8.5" className="bg-muted border-border"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch checked={cgpaVerified} onCheckedChange={handleToggleVerified} />
+                  <Label className="text-xs">Verified</Label>
+                </div>
+                <Button variant="hero" size="sm" onClick={handleSaveCgpa}>Save</Button>
+              </div>
+            )}
+          </div>
+        </AnimatedSection>
+
         {/* Stats row */}
         <StaggerContainer className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {[

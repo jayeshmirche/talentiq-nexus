@@ -165,6 +165,7 @@ export type Database = {
           career_readiness_score: number | null
           certifications_count: number | null
           cgpa: number | null
+          cgpa_verified: boolean
           created_at: string
           department: string | null
           extracted_resume_text: string | null
@@ -187,6 +188,7 @@ export type Database = {
           career_readiness_score?: number | null
           certifications_count?: number | null
           cgpa?: number | null
+          cgpa_verified?: boolean
           created_at?: string
           department?: string | null
           extracted_resume_text?: string | null
@@ -209,6 +211,7 @@ export type Database = {
           career_readiness_score?: number | null
           certifications_count?: number | null
           cgpa?: number | null
+          cgpa_verified?: boolean
           created_at?: string
           department?: string | null
           extracted_resume_text?: string | null

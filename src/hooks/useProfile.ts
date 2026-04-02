@@ -10,8 +10,9 @@ export interface Profile {
   organization: string | null;
   phone_number: string | null;
   department: string | null;
-  cgpa: number;
+  cgpa: number | null;
   resume_url: string | null;
+  cgpa_verified: boolean;
   skills: string[];
   projects_count: number;
   certifications_count: number;

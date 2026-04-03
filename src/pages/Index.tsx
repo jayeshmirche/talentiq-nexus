@@ -16,19 +16,10 @@ import vitLogo from "@/assets/logos/vit.png";
 import srmLogo from "@/assets/logos/srm.png";
 import iiitHyderabadLogo from "@/assets/logos/iiit-hyderabad.png";
 
-const placementData = [
-  { name: "Before", value: 62, fill: "hsl(var(--muted-foreground))" },
-  { name: "After TalentIQ", value: 85, fill: "url(#barGradient)" },
-];
-
-const hiringSpeed = [
-  { name: "Manual", days: 5, fill: "hsl(var(--muted-foreground))" },
-  { name: "TalentIQ", days: 1, fill: "url(#barGradient)" },
-];
-
-const roiData = [
-  { name: "Traditional", cost: 15000, fill: "hsl(var(--muted-foreground))" },
-  { name: "TalentIQ", cost: 8500, fill: "url(#barGradient)" },
+const comparisonData = [
+  { metric: "Placement Rate", traditional: 62, talentiq: 85, unit: "%" },
+  { metric: "Hiring Speed", traditional: 5, talentiq: 1, unit: " days" },
+  { metric: "Cost Per Hire", traditional: 15000, talentiq: 8500, unit: "₹" },
 ];
 
 const funnelData = [

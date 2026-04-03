@@ -12,6 +12,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { useJobs } from "@/hooks/useJobs";
 import { useStudentApplications } from "@/hooks/useApplications";
 import { calculatePlacementScore, calculateCareerReadiness, calculateSkillMatch, SKILL_RESOURCES } from "@/lib/skillEngine";
+import { supabase } from "@/integrations/supabase/client";
 import ResumeUpload from "@/components/ResumeUpload";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";

@@ -2,9 +2,8 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { GraduationCap, Target, Route, Briefcase, TrendingUp, BookOpen, Award, ArrowRight, AlertTriangle, ExternalLink, Loader2, Sparkles, ShieldCheck, ShieldAlert } from "lucide-react";
+import { GraduationCap, Target, Route, Briefcase, TrendingUp, BookOpen, Award, ArrowRight, AlertTriangle, ExternalLink, Loader2, Sparkles, ShieldCheck, ShieldAlert, Upload, FileCheck } from "lucide-react";
 import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, Radar } from "recharts";
 import AnimatedSection, { StaggerContainer, StaggerItem } from "@/components/AnimatedSection";
 import { motion } from "framer-motion";
@@ -12,6 +11,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { useJobs } from "@/hooks/useJobs";
 import { useStudentApplications } from "@/hooks/useApplications";
 import { calculatePlacementScore, calculateCareerReadiness, calculateSkillMatch, SKILL_RESOURCES } from "@/lib/skillEngine";
+import { supabase } from "@/integrations/supabase/client";
 import ResumeUpload from "@/components/ResumeUpload";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
@@ -49,26 +49,69 @@ const StudentDashboard = () => {
   const skills = profile?.skills || [];
   const cgpa = profile?.cgpa != null ? Number(profile.cgpa) : null;
   const cgpaVerified = (profile as any)?.cgpa_verified ?? false;
-  const [cgpaInput, setCgpaInput] = useState("");
-  const [showCgpaEdit, setShowCgpaEdit] = useState(false);
+  const [marksheetUploading, setMarksheetUploading] = useState(false);
+  const [verificationResult, setVerificationResult] = useState<any>(null);
 
-  useEffect(() => {
-    if (cgpa != null) setCgpaInput(String(cgpa));
-  }, [cgpa]);
+  const handleMarksheetUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
 
-  const handleSaveCgpa = async () => {
-    const val = parseFloat(cgpaInput);
-    if (isNaN(val) || val < 0 || val > 10) { toast.error("Enter a valid CGPA (0-10)"); return; }
-    await updateProfile({ cgpa: val } as any);
-    setShowCgpaEdit(false);
-    toast.success("CGPA updated!");
-    await refetch();
-  };
+    const validTypes = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+    if (!validTypes.includes(file.type)) {
+      toast.error("Please upload an image (JPG, PNG, WebP) or PDF");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("File must be under 10MB");
+      return;
+    }
 
-  const handleToggleVerified = async (checked: boolean) => {
-    await updateProfile({ cgpa_verified: checked } as any);
-    toast.success(checked ? "CGPA marked as verified" : "CGPA verification removed");
-    await refetch();
+    setMarksheetUploading(true);
+    setVerificationResult(null);
+
+    try {
+      // Upload to storage
+      const filePath = `${user.id}/marksheet_${Date.now()}.${file.name.split(".").pop()}`;
+      const { error: uploadError } = await supabase.storage
+        .from("marksheets")
+        .upload(filePath, file, { upsert: true });
+      if (uploadError) throw uploadError;
+
+      // Convert to base64 for AI vision
+      const reader = new FileReader();
+      const base64 = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => {
+          const result = reader.result as string;
+          resolve(result.split(",")[1]);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      // Call verification edge function
+      const { data, error } = await supabase.functions.invoke("verify-marksheet", {
+        body: {
+          marksheet_url: filePath,
+          file_base64: base64,
+          file_type: file.type,
+        },
+      });
+
+      if (error) throw error;
+
+      setVerificationResult(data);
+      if (data.verified) {
+        toast.success(`CGPA verified: ${data.extracted_cgpa?.toFixed(2)}`);
+        await refetch();
+      } else {
+        toast.error("Invalid or unverified marksheet. Please upload a valid document.");
+      }
+    } catch (err: any) {
+      console.error("Marksheet verification error:", err);
+      toast.error(err.message || "Verification failed. Please try again.");
+    } finally {
+      setMarksheetUploading(false);
+    }
   };
 
   // Calculate placement score — skip CGPA weight if null
@@ -186,13 +229,10 @@ const StudentDashboard = () => {
           <div className="glass rounded-xl p-5">
             <div className="flex items-center justify-between mb-3">
               <h4 className="font-heading font-semibold text-foreground text-sm flex items-center gap-2">
-                <GraduationCap size={16} className="text-primary" /> CGPA
+                <GraduationCap size={16} className="text-primary" /> CGPA Verification
               </h4>
-              <Button variant="ghost" size="sm" onClick={() => setShowCgpaEdit(!showCgpaEdit)}>
-                {showCgpaEdit ? "Cancel" : cgpa != null ? "Edit CGPA" : "Add CGPA"}
-              </Button>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 mb-4">
               <span className="font-heading font-bold text-2xl text-foreground">
                 {cgpa != null ? cgpa.toFixed(2) : "Not Available"}
               </span>
@@ -206,21 +246,51 @@ const StudentDashboard = () => {
                 </span>
               )}
             </div>
-            {showCgpaEdit && (
-              <div className="mt-3 flex items-end gap-3">
-                <div className="flex-1">
-                  <Label className="text-xs text-muted-foreground mb-1">Enter your CGPA (0-10)</Label>
-                  <Input
-                    type="number" step="0.01" min="0" max="10"
-                    value={cgpaInput} onChange={e => setCgpaInput(e.target.value)}
-                    placeholder="e.g. 8.5" className="bg-muted border-border"
+
+            {/* Marksheet Upload */}
+            <div className="border border-dashed border-border rounded-lg p-4 text-center">
+              {marksheetUploading ? (
+                <div className="flex flex-col items-center gap-2 py-2">
+                  <Loader2 className="animate-spin text-primary" size={24} />
+                  <p className="text-sm text-muted-foreground">Analyzing marksheet with AI...</p>
+                </div>
+              ) : (
+                <label className="cursor-pointer flex flex-col items-center gap-2 py-2">
+                  <Upload size={20} className="text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">
+                    {cgpaVerified ? "Upload new marksheet to re-verify" : "Upload official marksheet to verify CGPA"}
+                  </p>
+                  <p className="text-xs text-muted-foreground/60">JPG, PNG, WebP or PDF (max 10MB)</p>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,application/pdf"
+                    className="hidden"
+                    onChange={handleMarksheetUpload}
                   />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Switch checked={cgpaVerified} onCheckedChange={handleToggleVerified} />
-                  <Label className="text-xs">Verified</Label>
-                </div>
-                <Button variant="hero" size="sm" onClick={handleSaveCgpa}>Save</Button>
+                  <Button variant="outline" size="sm" className="mt-1" asChild>
+                    <span><FileCheck size={14} className="mr-1" /> Choose File</span>
+                  </Button>
+                </label>
+              )}
+            </div>
+
+            {/* Verification Result */}
+            {verificationResult && (
+              <div className={`mt-3 rounded-lg p-3 text-sm ${
+                verificationResult.verified 
+                  ? "bg-accent/10 border border-accent/20" 
+                  : "bg-destructive/10 border border-destructive/20"
+              }`}>
+                <p className="font-medium mb-1">
+                  {verificationResult.verified ? "✅ Verification Passed" : "❌ Verification Failed"}
+                </p>
+                <p className="text-xs text-muted-foreground">{verificationResult.verification_notes}</p>
+                {verificationResult.extracted_cgpa && (
+                  <p className="text-xs mt-1">Extracted CGPA: <strong>{verificationResult.extracted_cgpa.toFixed(2)}</strong></p>
+                )}
+                {verificationResult.confidence_score && (
+                  <p className="text-xs">Confidence: {verificationResult.confidence_score}%</p>
+                )}
               </div>
             )}
           </div>

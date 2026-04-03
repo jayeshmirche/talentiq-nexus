@@ -171,6 +171,7 @@ export type Database = {
           extracted_resume_text: string | null
           full_name: string | null
           id: string
+          marksheet_url: string | null
           mock_interview_score: number | null
           organization: string | null
           phone_number: string | null
@@ -194,6 +195,7 @@ export type Database = {
           extracted_resume_text?: string | null
           full_name?: string | null
           id?: string
+          marksheet_url?: string | null
           mock_interview_score?: number | null
           organization?: string | null
           phone_number?: string | null
@@ -217,6 +219,7 @@ export type Database = {
           extracted_resume_text?: string | null
           full_name?: string | null
           id?: string
+          marksheet_url?: string | null
           mock_interview_score?: number | null
           organization?: string | null
           phone_number?: string | null

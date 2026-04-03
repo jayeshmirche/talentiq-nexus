@@ -8,7 +8,7 @@ import {
   FileSpreadsheet, Brain, TrendingUp, GraduationCap, Building2, School,
   ArrowRight, Play, Star, ChevronRight, Zap, Shield, BarChart3
 } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend, LabelList } from "recharts";
 import iitDelhiLogo from "@/assets/logos/iit-delhi.png";
 import nitTrichyLogo from "@/assets/logos/nit-trichy.png";
 import bitsPilaniLogo from "@/assets/logos/bits-pilani.png";
@@ -16,19 +16,10 @@ import vitLogo from "@/assets/logos/vit.png";
 import srmLogo from "@/assets/logos/srm.png";
 import iiitHyderabadLogo from "@/assets/logos/iiit-hyderabad.png";
 
-const placementData = [
-  { name: "Before", value: 62, fill: "hsl(var(--muted-foreground))" },
-  { name: "After TalentIQ", value: 85, fill: "url(#barGradient)" },
-];
-
-const hiringSpeed = [
-  { name: "Manual", days: 5, fill: "hsl(var(--muted-foreground))" },
-  { name: "TalentIQ", days: 1, fill: "url(#barGradient)" },
-];
-
-const roiData = [
-  { name: "Traditional", cost: 15000, fill: "hsl(var(--muted-foreground))" },
-  { name: "TalentIQ", cost: 8500, fill: "url(#barGradient)" },
+const comparisonData = [
+  { metric: "Placement Rate", traditional: 62, talentiq: 85, unit: "%" },
+  { metric: "Hiring Speed", traditional: 5, talentiq: 1, unit: " days" },
+  { metric: "Cost Per Hire", traditional: 15000, talentiq: 8500, unit: "₹" },
 ];
 
 const funnelData = [
@@ -66,8 +57,12 @@ const testimonials = [
 const GradientDefs = () => (
   <defs>
     <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stopColor="hsl(263, 70%, 50%)" />
-      <stop offset="100%" stopColor="hsl(187, 92%, 42%)" />
+      <stop offset="0%" stopColor="hsl(263, 70%, 55%)" />
+      <stop offset="100%" stopColor="hsl(187, 92%, 45%)" />
+    </linearGradient>
+    <linearGradient id="barGradientGreen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stopColor="hsl(150, 80%, 40%)" />
+      <stop offset="100%" stopColor="hsl(187, 92%, 45%)" />
     </linearGradient>
   </defs>
 );
@@ -75,8 +70,19 @@ const GradientDefs = () => (
 const chartTooltipStyle = {
   background: "hsl(var(--card))",
   border: "1px solid hsl(var(--border))",
-  borderRadius: 8,
+  borderRadius: 10,
   color: "hsl(var(--foreground))",
+  fontSize: 13,
+  padding: "8px 12px",
+};
+
+const renderBarLabel = (props: any) => {
+  const { x, y, width, value } = props;
+  return (
+    <text x={x + width / 2} y={y - 8} fill="hsl(var(--foreground))" textAnchor="middle" fontSize={13} fontWeight={700}>
+      {value?.toLocaleString()}
+    </text>
+  );
 };
 
 const Index = () => {
@@ -294,52 +300,42 @@ const Index = () => {
             />
           </AnimatedSection>
           <StaggerContainer className="grid md:grid-cols-2 gap-6">
+            {comparisonData.map((item) => (
+              <StaggerItem key={item.metric}>
+                <div className="glass rounded-2xl p-6">
+                  <h3 className="font-heading font-semibold text-foreground mb-1 text-lg">{item.metric}</h3>
+                  <p className="text-muted-foreground text-xs mb-4">Traditional vs TalentIQ</p>
+                  <ResponsiveContainer width="100%" height={240}>
+                    <BarChart data={[item]} barSize={52} barGap={12}>
+                      <GradientDefs />
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis dataKey="metric" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 13, fontWeight: 600 }} />
+                      <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
+                      <Tooltip contentStyle={chartTooltipStyle} />
+                      <Legend
+                        wrapperStyle={{ fontSize: 13, fontWeight: 600, paddingTop: 8 }}
+                        formatter={(value: string) => <span style={{ color: "hsl(var(--foreground))" }}>{value}</span>}
+                      />
+                      <Bar dataKey="traditional" name="Traditional" fill="hsl(var(--muted-foreground))" radius={[8, 8, 0, 0]} opacity={0.5}>
+                        <LabelList dataKey="traditional" position="top" content={renderBarLabel} />
+                      </Bar>
+                      <Bar dataKey="talentiq" name="TalentIQ" fill="url(#barGradient)" radius={[8, 8, 0, 0]}>
+                        <LabelList dataKey="talentiq" position="top" content={renderBarLabel} />
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </StaggerItem>
+            ))}
             <StaggerItem>
               <div className="glass rounded-2xl p-6">
-                <h3 className="font-heading font-semibold text-foreground mb-4">Placement Rate Improvement</h3>
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={placementData}>
-                    <GradientDefs />
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="name" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
-                    <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} domain={[0, 100]} />
-                    <Tooltip contentStyle={chartTooltipStyle} />
-                    <Bar dataKey="value" radius={[6, 6, 0, 0]}>
-                      {placementData.map((entry, index) => (
-                        <Cell key={index} fill={entry.fill} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </StaggerItem>
-            <StaggerItem>
-              <div className="glass rounded-2xl p-6">
-                <h3 className="font-heading font-semibold text-foreground mb-4">Hiring Speed (Days)</h3>
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={hiringSpeed}>
-                    <GradientDefs />
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="name" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
-                    <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
-                    <Tooltip contentStyle={chartTooltipStyle} />
-                    <Bar dataKey="days" radius={[6, 6, 0, 0]}>
-                      {hiringSpeed.map((entry, index) => (
-                        <Cell key={index} fill={entry.fill} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </StaggerItem>
-            <StaggerItem>
-              <div className="glass rounded-2xl p-6">
-                <h3 className="font-heading font-semibold text-foreground mb-4">Placement Funnel</h3>
-                <div className="flex flex-col gap-3">
+                <h3 className="font-heading font-semibold text-foreground mb-1 text-lg">Placement Funnel</h3>
+                <p className="text-muted-foreground text-xs mb-4">Application to selection pipeline</p>
+                <div className="flex flex-col gap-3 mt-2">
                   {funnelData.map((item) => (
                     <div key={item.name} className="flex items-center gap-3">
-                      <span className="text-muted-foreground text-xs w-20">{item.name}</span>
-                      <div className="flex-1 h-8 rounded-lg overflow-hidden bg-muted">
+                      <span className="text-muted-foreground text-xs w-20 font-medium">{item.name}</span>
+                      <div className="flex-1 h-9 rounded-lg overflow-hidden bg-muted">
                         <motion.div
                           initial={{ width: 0 }}
                           whileInView={{ width: `${(item.value / 1000) * 100}%` }}
@@ -349,29 +345,10 @@ const Index = () => {
                           style={{ background: item.fill }}
                         />
                       </div>
-                      <span className="text-foreground text-sm font-semibold w-12">{item.value}</span>
+                      <span className="text-foreground text-sm font-bold w-12">{item.value}</span>
                     </div>
                   ))}
                 </div>
-              </div>
-            </StaggerItem>
-            <StaggerItem>
-              <div className="glass rounded-2xl p-6">
-                <h3 className="font-heading font-semibold text-foreground mb-4">Cost Per Hire (₹)</h3>
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={roiData}>
-                    <GradientDefs />
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="name" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
-                    <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
-                    <Tooltip contentStyle={chartTooltipStyle} />
-                    <Bar dataKey="cost" radius={[6, 6, 0, 0]}>
-                      {roiData.map((entry, index) => (
-                        <Cell key={index} fill={entry.fill} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
               </div>
             </StaggerItem>
           </StaggerContainer>

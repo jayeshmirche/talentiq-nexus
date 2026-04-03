@@ -50,26 +50,69 @@ const StudentDashboard = () => {
   const skills = profile?.skills || [];
   const cgpa = profile?.cgpa != null ? Number(profile.cgpa) : null;
   const cgpaVerified = (profile as any)?.cgpa_verified ?? false;
-  const [cgpaInput, setCgpaInput] = useState("");
-  const [showCgpaEdit, setShowCgpaEdit] = useState(false);
+  const [marksheetUploading, setMarksheetUploading] = useState(false);
+  const [verificationResult, setVerificationResult] = useState<any>(null);
 
-  useEffect(() => {
-    if (cgpa != null) setCgpaInput(String(cgpa));
-  }, [cgpa]);
+  const handleMarksheetUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
 
-  const handleSaveCgpa = async () => {
-    const val = parseFloat(cgpaInput);
-    if (isNaN(val) || val < 0 || val > 10) { toast.error("Enter a valid CGPA (0-10)"); return; }
-    await updateProfile({ cgpa: val } as any);
-    setShowCgpaEdit(false);
-    toast.success("CGPA updated!");
-    await refetch();
-  };
+    const validTypes = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+    if (!validTypes.includes(file.type)) {
+      toast.error("Please upload an image (JPG, PNG, WebP) or PDF");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("File must be under 10MB");
+      return;
+    }
 
-  const handleToggleVerified = async (checked: boolean) => {
-    await updateProfile({ cgpa_verified: checked } as any);
-    toast.success(checked ? "CGPA marked as verified" : "CGPA verification removed");
-    await refetch();
+    setMarksheetUploading(true);
+    setVerificationResult(null);
+
+    try {
+      // Upload to storage
+      const filePath = `${user.id}/marksheet_${Date.now()}.${file.name.split(".").pop()}`;
+      const { error: uploadError } = await supabase.storage
+        .from("marksheets")
+        .upload(filePath, file, { upsert: true });
+      if (uploadError) throw uploadError;
+
+      // Convert to base64 for AI vision
+      const reader = new FileReader();
+      const base64 = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => {
+          const result = reader.result as string;
+          resolve(result.split(",")[1]);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      // Call verification edge function
+      const { data, error } = await supabase.functions.invoke("verify-marksheet", {
+        body: {
+          marksheet_url: filePath,
+          file_base64: base64,
+          file_type: file.type,
+        },
+      });
+
+      if (error) throw error;
+
+      setVerificationResult(data);
+      if (data.verified) {
+        toast.success(`CGPA verified: ${data.extracted_cgpa?.toFixed(2)}`);
+        await refetch();
+      } else {
+        toast.error("Invalid or unverified marksheet. Please upload a valid document.");
+      }
+    } catch (err: any) {
+      console.error("Marksheet verification error:", err);
+      toast.error(err.message || "Verification failed. Please try again.");
+    } finally {
+      setMarksheetUploading(false);
+    }
   };
 
   // Calculate placement score — skip CGPA weight if null

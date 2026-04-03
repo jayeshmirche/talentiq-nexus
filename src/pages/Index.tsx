@@ -57,8 +57,12 @@ const testimonials = [
 const GradientDefs = () => (
   <defs>
     <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stopColor="hsl(263, 70%, 50%)" />
-      <stop offset="100%" stopColor="hsl(187, 92%, 42%)" />
+      <stop offset="0%" stopColor="hsl(263, 70%, 55%)" />
+      <stop offset="100%" stopColor="hsl(187, 92%, 45%)" />
+    </linearGradient>
+    <linearGradient id="barGradientGreen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stopColor="hsl(150, 80%, 40%)" />
+      <stop offset="100%" stopColor="hsl(187, 92%, 45%)" />
     </linearGradient>
   </defs>
 );
@@ -66,8 +70,19 @@ const GradientDefs = () => (
 const chartTooltipStyle = {
   background: "hsl(var(--card))",
   border: "1px solid hsl(var(--border))",
-  borderRadius: 8,
+  borderRadius: 10,
   color: "hsl(var(--foreground))",
+  fontSize: 13,
+  padding: "8px 12px",
+};
+
+const renderBarLabel = (props: any) => {
+  const { x, y, width, value } = props;
+  return (
+    <text x={x + width / 2} y={y - 8} fill="hsl(var(--foreground))" textAnchor="middle" fontSize={13} fontWeight={700}>
+      {value?.toLocaleString()}
+    </text>
+  );
 };
 
 const Index = () => {

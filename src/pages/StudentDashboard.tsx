@@ -128,11 +128,9 @@ const StudentDashboard = () => {
   };
 
   const handleApply = async (jobId: string) => {
-    const existing = applications.find(a => a.job_id === jobId);
-    if (existing) { toast.error("Already applied"); return; }
     const error = await applyToJob(jobId);
     if (!error) toast.success("Application submitted!");
-    else toast.error("Failed to apply");
+    else toast.error(error.message || "Failed to apply");
   };
 
   const handleResumeComplete = async (_url: string, analysis?: ResumeAnalysis | null) => {

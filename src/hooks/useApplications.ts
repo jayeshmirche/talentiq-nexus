@@ -48,11 +48,20 @@ export const useStudentApplications = () => {
   }, [user]);
 
   const applyToJob = async (jobId: string) => {
-    if (!user) return;
+    if (!user) return { message: "Not authenticated" } as any;
+    // Check for existing application
+    const { data: existing } = await supabase
+      .from("applications")
+      .select("id")
+      .eq("student_id", user.id)
+      .eq("job_id", jobId)
+      .maybeSingle();
+    if (existing) return { message: "You have already applied for this job." } as any;
     const { error } = await supabase.from("applications").insert({
       student_id: user.id,
       job_id: jobId,
     } as any);
+    if (error?.code === "23505") return { message: "You have already applied for this job." } as any;
     if (!error) await fetchApplications();
     return error;
   };

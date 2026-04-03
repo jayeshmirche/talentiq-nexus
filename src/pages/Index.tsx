@@ -8,7 +8,7 @@ import {
   FileSpreadsheet, Brain, TrendingUp, GraduationCap, Building2, School,
   ArrowRight, Play, Star, ChevronRight, Zap, Shield, BarChart3
 } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend, LabelList } from "recharts";
 import iitDelhiLogo from "@/assets/logos/iit-delhi.png";
 import nitTrichyLogo from "@/assets/logos/nit-trichy.png";
 import bitsPilaniLogo from "@/assets/logos/bits-pilani.png";

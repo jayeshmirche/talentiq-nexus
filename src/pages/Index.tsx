@@ -15,6 +15,7 @@ import bitsPilaniLogo from "@/assets/logos/bits-pilani.png";
 import vitLogo from "@/assets/logos/vit.png";
 import srmLogo from "@/assets/logos/srm.png";
 import iiitHyderabadLogo from "@/assets/logos/iiit-hyderabad.png";
+import ImpactMetrics from "@/components/ImpactMetrics";
 
 const comparisonData = [
   { metric: "Placement Rate", traditional: 62, talentiq: 85, unit: "%" },

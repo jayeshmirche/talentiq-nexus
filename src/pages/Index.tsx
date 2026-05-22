@@ -289,71 +289,7 @@ const Index = () => {
       </section>
 
       {/* Impact Metrics */}
-      <section className="section-padding relative">
-        <div className="section-container">
-          <AnimatedSection>
-            <SectionHeading
-              badge="Impact"
-              title="Measurable"
-              gradientText="Results"
-              subtitle="Data-driven outcomes that speak for themselves"
-            />
-          </AnimatedSection>
-          <StaggerContainer className="grid md:grid-cols-2 gap-6">
-            {comparisonData.map((item) => (
-              <StaggerItem key={item.metric}>
-                <div className="glass rounded-2xl p-6">
-                  <h3 className="font-heading font-semibold text-foreground mb-1 text-lg">{item.metric}</h3>
-                  <p className="text-muted-foreground text-xs mb-4">Traditional vs TalentIQ</p>
-                  <ResponsiveContainer width="100%" height={240}>
-                    <BarChart data={[item]} barSize={52} barGap={12}>
-                      <GradientDefs />
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="metric" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 13, fontWeight: 600 }} />
-                      <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
-                      <Tooltip contentStyle={chartTooltipStyle} />
-                      <Legend
-                        wrapperStyle={{ fontSize: 13, fontWeight: 600, paddingTop: 8 }}
-                        formatter={(value: string) => <span style={{ color: "hsl(var(--foreground))" }}>{value}</span>}
-                      />
-                      <Bar dataKey="traditional" name="Traditional" fill="hsl(var(--muted-foreground))" radius={[8, 8, 0, 0]} opacity={0.5}>
-                        <LabelList dataKey="traditional" position="top" content={renderBarLabel} />
-                      </Bar>
-                      <Bar dataKey="talentiq" name="TalentIQ" fill="url(#barGradient)" radius={[8, 8, 0, 0]}>
-                        <LabelList dataKey="talentiq" position="top" content={renderBarLabel} />
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </StaggerItem>
-            ))}
-            <StaggerItem>
-              <div className="glass rounded-2xl p-6">
-                <h3 className="font-heading font-semibold text-foreground mb-1 text-lg">Placement Funnel</h3>
-                <p className="text-muted-foreground text-xs mb-4">Application to selection pipeline</p>
-                <div className="flex flex-col gap-3 mt-2">
-                  {funnelData.map((item) => (
-                    <div key={item.name} className="flex items-center gap-3">
-                      <span className="text-muted-foreground text-xs w-20 font-medium">{item.name}</span>
-                      <div className="flex-1 h-9 rounded-lg overflow-hidden bg-muted">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          whileInView={{ width: `${(item.value / 1000) * 100}%` }}
-                          viewport={{ once: true }}
-                          transition={{ duration: 1, ease: "easeOut" }}
-                          className="h-full rounded-lg"
-                          style={{ background: item.fill }}
-                        />
-                      </div>
-                      <span className="text-foreground text-sm font-bold w-12">{item.value}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </StaggerItem>
-          </StaggerContainer>
-        </div>
-      </section>
+      <ImpactMetrics />
 
       {/* Key Numbers */}
       <AnimatedSection className="py-16 bg-card/30">
